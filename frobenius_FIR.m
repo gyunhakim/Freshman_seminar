@@ -11,7 +11,7 @@ m = size(C,1);
 N = 4;                            % FIR 필터 길이
 Omega = eye(m*N);                 % (m*N x m*N) ; 여기서는 4x4 단위행렬
 
-% -> dtfwnuf_gain 함수(위에서 만든) 호출하여 이득 G 계산
+% -> dtfwnuf_gain 함수 (이득 G 계산)
 [G, ThetaN] = dtfwnuf_gain(A, C, Omega, N);
 
 disp('DTFWNUF Filter gain G =');
