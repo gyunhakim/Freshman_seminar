@@ -19,6 +19,7 @@ m = size(C,1);
 N = 3;                            % FIR 필터 길이
 Omega = eye(m*N);                 % (m*N x m*N) ; 여기서는 4x4 단위행렬
 
+
 % [3] 시뮬레이션 설정
 T = 20;                  % 시뮬레이션 총 스텝
 x_true = zeros(n, T+1);  % 실제 상태 (k=0 ~ k=T)
@@ -118,7 +119,7 @@ function [G, ThetaN] = dtfwnuf_gain(A, C, Omega, N)
     % 2) G = A^N (ThetaN^T * Omega^2 * ThetaN)^(-1) * ThetaN^T * Omega^2
     %    제약조건 ThetaN * G = A^N 를 만족하면서
     %    Frobenius 노름 (가중) 최소화
-    temp = ThetaN' * (Omega^2) * ThetaN;   % (n x n)
-    G = A^N * ( temp \ ( ThetaN' * (Omega^2) ) );  % inv(temp)*(...) 꼴
+    temp = ThetaN' * (Omega^-2) * ThetaN;   % (n x n)
+    G = A^N * ( temp \ ( ThetaN' * (Omega^-2) ) );  % inv(temp)*(...) 꼴
 
 end
