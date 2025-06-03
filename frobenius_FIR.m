@@ -1,14 +1,22 @@
 clear; clc; close all;
 
 % [1] 시스템/측정 행렬 정의
-A = [0.8  0.1;
-     0    0.9];
-C = [1 0];
+delta = 0;                                           % Uncertainty
+A = [0.931+delta    0               0.111;           % F-404 gas turbine engine
+    0.008           0.98+delta      -0.017;
+    0.014+delta     0+delta         0.895+delta];
+C = [1+0.1*delta    0               0; 
+    0               1+0.1*delta     0];
+W = [0.21           0;
+    0.049           0.03;
+    0.048           -0.037];
+V = [0.011          0;
+    0               -0.021];
 n = size(A,1);
 m = size(C,1);
 
 % [2] FIR 필터 파라미터 설정
-N = 4;                            % FIR 필터 길이
+N = 3;                            % FIR 필터 길이
 Omega = eye(m*N);                 % (m*N x m*N) ; 여기서는 4x4 단위행렬
 
 % [3] 시뮬레이션 설정
@@ -18,7 +26,7 @@ z_meas = zeros(m, T+1);  % 실제 측정
 x_hat = zeros(n, T+1);   % 추정값 (DTFWNUF)
 
 % 초기값
-x0 = [1; -1];
+x0 = randn(3,1);
 x_true(:,1) = x0;
 z_meas(:,1) = C*x0;  % 잡음 0이라고 가정(필요시 추가 가능)
 
@@ -26,11 +34,11 @@ z_meas(:,1) = C*x0;  % 잡음 0이라고 가정(필요시 추가 가능)
 for k = 1:T
     % -- 실제 시스템 진행
     w_k = [0; 0];       % 프로세스 잡음 (여기선 0으로)
-    x_true(:,k+1) = A * x_true(:,k) + w_k;
+    x_true(:,k+1) = A * x_true(:,k) + W * w_k;
 
     % -- 측정
-    v_k = 0;            % 측정 잡음 (여기선 0으로, 필요시 randn() 등 추가)
-    z_meas(:,k+1) = C * x_true(:,k+1) + v_k;
+    v_k = [0; 0];            % 측정 잡음 (여기선 0으로, 필요시 randn() 등 추가)
+    z_meas(:,k+1) = C * x_true(:,k+1) + V * v_k;
 
     % -- DTFWNUF 필터 적용 (k >= N일 때)
     if k >= N
@@ -38,11 +46,15 @@ for k = 1:T
         %           (m*N x 1)  = (1 x 4)^T 여기서는 4x1
         Z_k_1 = [];
         for j = 0:N-1
-            Z_k_1 = [ Z_k_1; z_meas(:, k-j) ];  
+            %Z_k_1 = [ Z_k_1; z_meas(:, k-j) ];
+            Z_k_1 = [ Z_k_1; z_meas(:, k-j) ];
+            disp(Z_k_1);
         end
         
         % -> dtfwnuf_gain 함수(위에서 만든) 호출하여 이득 G 계산
         [G, ThetaN] = dtfwnuf_gain(A, C, Omega, N);
+        disp('DTFWNUF Filter gain G =');
+        disp(G);
         % x_hat(k) = G * Z_{k-1}
         x_hat(:, k+1) = G * Z_k_1;  
     else
@@ -54,22 +66,25 @@ end
 % [5] 결과 플롯
 t = 0:T;
 figure; 
-subplot(2,1,1);
+subplot(3,1,1);
 plot(t, x_true(1,:), 'o-k','LineWidth',1.5); hold on;
 plot(t, x_hat(1,:),  'x--r','LineWidth',1.5);
 legend('true x_1','hat x_1','Location','best');
 grid on; xlabel('time step k'); ylabel('x(1)');
 
-subplot(2,1,2);
+subplot(3,1,2);
 plot(t, x_true(2,:), 'o-k','LineWidth',1.5); hold on;
 plot(t, x_hat(2,:),  'x--r','LineWidth',1.5);
 legend('true x_2','hat x_2','Location','best');
 grid on; xlabel('time step k'); ylabel('x(2)');
 
-sgtitle('DTFWNUF FIR Filter Example');
+subplot(3,1,3);
+plot(t, x_true(3,:), 'o-k','LineWidth',1.5); hold on;
+plot(t, x_hat(3,:),  'x--r','LineWidth',1.5);
+legend('true x_3','hat x_3','Location','best');
+grid on; xlabel('time step k'); ylabel('x(3)');
 
-disp('DTFWNUF Filter gain G =');
-disp(G);
+sgtitle('DTFWNUF FIR Filter');
 
 function [G, ThetaN] = dtfwnuf_gain(A, C, Omega, N)
 % dtfwnuf_gain : DTFWNUF 필터 이득 G를 계산
