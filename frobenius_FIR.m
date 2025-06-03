@@ -11,12 +11,6 @@ m = size(C,1);
 N = 4;                            % FIR 필터 길이
 Omega = eye(m*N);                 % (m*N x m*N) ; 여기서는 4x4 단위행렬
 
-% -> dtfwnuf_gain 함수 (이득 G 계산)
-[G, ThetaN] = dtfwnuf_gain(A, C, Omega, N);
-
-disp('DTFWNUF Filter gain G =');
-disp(G);
-
 % [3] 시뮬레이션 설정
 T = 20;                  % 시뮬레이션 총 스텝
 x_true = zeros(n, T+1);  % 실제 상태 (k=0 ~ k=T)
@@ -46,7 +40,9 @@ for k = 1:T
         for j = 0:N-1
             Z_k_1 = [ Z_k_1; z_meas(:, k-j) ];  
         end
-
+        
+        % -> dtfwnuf_gain 함수(위에서 만든) 호출하여 이득 G 계산
+        [G, ThetaN] = dtfwnuf_gain(A, C, Omega, N);
         % x_hat(k) = G * Z_{k-1}
         x_hat(:, k+1) = G * Z_k_1;  
     else
@@ -71,6 +67,9 @@ legend('true x_2','hat x_2','Location','best');
 grid on; xlabel('time step k'); ylabel('x(2)');
 
 sgtitle('DTFWNUF FIR Filter Example');
+
+disp('DTFWNUF Filter gain G =');
+disp(G);
 
 function [G, ThetaN] = dtfwnuf_gain(A, C, Omega, N)
 % dtfwnuf_gain : DTFWNUF 필터 이득 G를 계산
